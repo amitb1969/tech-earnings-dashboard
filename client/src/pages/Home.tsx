@@ -601,8 +601,8 @@ export default function Home() {
                       <div className="text-sm font-bold metric-number" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
                         {item.current}%
                       </div>
-                      <div className={`text-xs font-bold ${item.acceleration.startsWith("+") ? "text-green-600" : "text-red-600"}`}>
-                        {item.acceleration}
+                      <div className={`text-xs font-bold ${item.acceleration > 0 ? "text-green-600" : "text-red-600"}`}>
+                        {item.acceleration > 0 ? "+" : ""}{item.acceleration}pp
                       </div>
                     </div>
                   </div>
