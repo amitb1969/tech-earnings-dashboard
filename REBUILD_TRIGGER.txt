@@ -1,0 +1,2 @@
+REBUILD TRIGGER - $(date)
+Force Vercel to clear cache and rebuild with latest verified data
