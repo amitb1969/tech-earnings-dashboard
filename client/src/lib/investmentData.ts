@@ -423,7 +423,7 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
   {
     ticker: "GOOGL",
     name: "Alphabet / Google",
-    color: "#4285F4",
+    color: "#34A853",
     reportDate: "April 29, 2026",
     source: "https://abc.xyz/investor/news/news-details/2026/Alphabet-Announces-First-Quarter-2026-Results-2026-X-ge4Dm6bf/default.aspx",
     
@@ -457,13 +457,13 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
     ],
     
     guidance: {
-      nextQuarterRevenue: "Estimated $112-115B (based on management commentary)",
-      priorGuidance: "Not explicitly provided (Google doesn't give forward guidance)",
+      nextQuarterRevenue: "Not provided",
+      priorGuidance: "Not provided",
       raise: false,
-      magnitude: "N/A",
-      conservatism: "conservative",
-      tone: "Management cautious on macro but confident on Cloud inflection",
-      source: "CEO Sundar Pichai earnings remarks"
+      magnitude: "N/A — Alphabet does not issue forward revenue guidance",
+      conservatism: "neutral",
+      tone: "Management positive on Cloud inflection and Search resilience; no specific quarterly revenue guidance issued (consistent with Alphabet's longstanding policy)",
+      source: "Alphabet Q1 2026 earnings call — no forward revenue guidance issued"
     },
     
     margins: [
@@ -614,13 +614,13 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
     ],
     
     guidance: {
-      nextQuarterRevenue: "Estimated $185-190B (based on management commentary)",
-      priorGuidance: "Not explicitly provided (Amazon doesn't give forward guidance)",
-      raise: false,
-      magnitude: "N/A",
-      conservatism: "conservative",
-      tone: "Management confident on AWS re-acceleration but cautious on CapEx ROI",
-      source: "Earnings call commentary"
+      nextQuarterRevenue: "$194–199B (Q2 2026 net sales)",
+      priorGuidance: "N/A — first time issuing Q2 2026 guidance",
+      raise: true,
+      magnitude: "Above prior consensus; Prime Day timing shifted into Q2",
+      conservatism: "neutral",
+      tone: "Management confident on AWS re-acceleration; Q2 net sales guidance reflects Prime Day timing in Q2 (per Amazon Q1 2026 release)",
+      source: "Amazon Q1 2026 official press release — Q2 net sales guidance"
     },
     
     margins: [
@@ -634,7 +634,7 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
       },
       {
         metric: "AWS Operating Margin",
-        current: 37.8,
+        current: 37.7,
         prior: 39.2,
         trend: "compressing",
         driver: "Increased CapEx for AI infrastructure; margin compression from custom silicon investment",
@@ -771,13 +771,13 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
     ],
     
     guidance: {
-      nextQuarterRevenue: "Q3 revenue guidance +14% to +17% YoY",
-      priorGuidance: "Q2 revenue guidance +17% YoY",
-      raise: false,
-      magnitude: "Guidance slightly below consensus",
-      conservatism: "conservative",
-      tone: "Management cautious on macro; no AI monetization clarity",
-      source: "Official Q2 FY2026 guidance"
+      nextQuarterRevenue: "+14% to +17% YoY (Q3 FY2026)",
+      priorGuidance: "+17% YoY (Q2 FY2026 actual)",
+      raise: true,
+      magnitude: "Above prior ~10% consensus; midpoint slightly below the +17% Q2 actual",
+      conservatism: "neutral",
+      tone: "Guidance range above sell-side consensus but signals a modest deceleration vs. the +17% Q2 print; no new AI monetization disclosure",
+      source: "Apple Q2 FY2026 guidance (earnings call)"
     },
     
     margins: [
