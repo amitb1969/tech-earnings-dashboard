@@ -449,6 +449,16 @@ export const aiMetricsData = [
   { company: "Apple", metric: "Active Devices", value: "2.5B+", growth: "AI Distribution" },
 ];
 
+// Earnings-day closing prices (verified from each company's official earnings release / IR page).
+// Used as the anchor for "since earnings" change calculation against live quotes.
+export const earningsDayClose: Record<string, { price: number; date: string; ticker: string; name: string; color: string }> = {
+  META:  { price: 669.12, date: "2026-04-29", ticker: "META",  name: "Meta",      color: "#1877F2" },
+  MSFT:  { price: 424.58, date: "2026-04-29", ticker: "MSFT",  name: "Microsoft", color: "#00A4EF" },
+  GOOGL: { price: 349.94, date: "2026-04-29", ticker: "GOOGL", name: "Alphabet",  color: "#34A853" },
+  AMZN:  { price: 263.04, date: "2026-04-29", ticker: "AMZN",  name: "Amazon",    color: "#FF9900" },
+  AAPL:  { price: 270.17, date: "2026-04-30", ticker: "AAPL",  name: "Apple",     color: "#555555" },
+};
+
 export const crossCompanyThemes = [
   {
     title: "AI CapEx Arms Race",

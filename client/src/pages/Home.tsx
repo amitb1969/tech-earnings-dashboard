@@ -38,6 +38,7 @@ import {
   Target,
   Zap,
 } from "lucide-react";
+import LiveStockPrices from "@/components/LiveStockPrices";
 
 // ─── Intersection observer hook ──────────────────────────────────────────────
 function useInView(threshold = 0.2) {
@@ -153,6 +154,7 @@ function InflectionPointCard({
   investmentSignal: "upgrade_trigger" | "downgrade_risk" | "neutral";
 }) {
   const [expanded, setExpanded] = useState(false);
+  const priorIsEstimate = /\b(est\.?|estimate)\b/i.test(prior);
   return (
     <div
       className="rounded-lg border p-4 mb-3 cursor-pointer transition-all"
@@ -162,9 +164,18 @@ function InflectionPointCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <div className="font-bold text-sm text-foreground">{change}</div>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex flex-wrap items-center gap-2 mt-2">
             <div className="text-xs text-muted-foreground">
               <span className="font-semibold">Prior:</span> {prior}
+              {priorIsEstimate && (
+                <span
+                  className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide"
+                  style={{ background: "#F59E0B20", color: "#B45309" }}
+                  title="This prior value is an estimate, not an officially reported figure."
+                >
+                  Est.
+                </span>
+              )}
             </div>
             <TrendingUp className="w-3 h-3 text-blue-600" />
             <div className="text-xs text-muted-foreground">
@@ -576,6 +587,9 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* ── Live stock prices (real, fetched at runtime) ── */}
+      <LiveStockPrices />
 
       {/* ── Cross-company comparison ── */}
       <div className="border-b border-border bg-white">
