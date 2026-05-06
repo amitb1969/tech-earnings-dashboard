@@ -1,0 +1,9 @@
+{
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "env": {
+    "VITE_APP_TITLE": "Hedge Fund Investment Intelligence Dashboard",
+    "VITE_APP_ID": "tech-earnings-dashboard"
+  }
+}
