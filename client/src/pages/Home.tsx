@@ -608,12 +608,12 @@ export default function Home() {
                 Growth Acceleration (YoY %)
               </h3>
               <div className="space-y-2">
-                {crossCompanyMetrics.growthAcceleration.map((item: any, i: number) => (
+                {crossCompanyMetrics.growthAcceleration.map((item, i: number) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded bg-gray-50">
-                    <div className="text-sm font-bold">{item.ticker}</div>
+                    <div className="text-sm font-bold">{item.company}</div>
                     <div className="flex items-center gap-2">
                       <div className="text-sm font-bold metric-number" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
-                        {item.current}%
+                        {item.growth}%
                       </div>
                       <div className={`text-xs font-bold ${item.acceleration > 0 ? "text-green-600" : "text-red-600"}`}>
                         {item.acceleration > 0 ? "+" : ""}{item.acceleration}pp
@@ -630,17 +630,17 @@ export default function Home() {
                 Margin Expansion (pp)
               </h3>
               <div className="space-y-2">
-                {crossCompanyMetrics.marginExpansion.map((item: any, i: number) => (
+                {crossCompanyMetrics.marginExpansion.map((item, i: number) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded bg-gray-50">
                     <div>
-                      <div className="text-sm font-bold">{item.ticker}</div>
+                      <div className="text-sm font-bold">{item.company}</div>
                       <div className="text-xs text-muted-foreground">{item.metric}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-bold metric-number" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
                         {item.current}%
                       </div>
-                      <div className="text-xs text-green-600 font-bold">{item.expansion}</div>
+                      <div className="text-xs text-green-600 font-bold">+{item.expansion}pp</div>
                     </div>
                   </div>
                 ))}
@@ -656,12 +656,12 @@ export default function Home() {
                 Management Conviction Score
               </h3>
               <div className="space-y-3">
-                {crossCompanyMetrics.managementConviction.map((item: any, i: number) => (
+                {crossCompanyMetrics.managementConviction.map((item, i: number) => (
                   <div key={i} className="p-3 rounded bg-gray-50">
                     <div className="flex items-center justify-between mb-1">
-                      <div className="text-sm font-bold">{item.ticker}</div>
-                      <div className="text-sm font-bold" style={{ color: item.conviction > 8 ? "#10B981" : "#F59E0B" }}>
-                        {item.conviction}/10
+                      <div className="text-sm font-bold">{item.company}</div>
+                      <div className="text-sm font-bold" style={{ color: item.score > 8 ? "#10B981" : "#F59E0B" }}>
+                        {item.score}/10
                       </div>
                     </div>
                     <div className="text-xs text-muted-foreground">{item.signal}</div>
@@ -676,9 +676,9 @@ export default function Home() {
                 Analyst Revision Probability
               </h3>
               <div className="space-y-3">
-                {crossCompanyMetrics.analystRevisionProbability.map((item: any, i: number) => (
+                {crossCompanyMetrics.analystRevisionProbability.map((item, i: number) => (
                   <div key={i} className="p-3 rounded bg-gray-50">
-                    <div className="text-sm font-bold mb-1">{item.ticker}</div>
+                    <div className="text-sm font-bold mb-1">{item.company}</div>
                     <div className="flex gap-2 mb-1">
                       <div
                         className="text-xs px-2 py-0.5 rounded font-bold"
@@ -736,4 +736,3 @@ export default function Home() {
     </div>
   );
 }
-// Force rebuild - Wed May  6 11:42:28 EDT 2026

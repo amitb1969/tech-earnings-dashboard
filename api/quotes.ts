@@ -1,29 +1,103 @@
-// Live quote proxy. Fetches real prices from Yahoo Finance's public endpoint
-// (no API key required) so the dashboard never fabricates price data.
+// Live quote proxy. Fetches real prices from Yahoo Finance's public v8 chart
+// endpoint (no API key, no crumb cookie required) so the dashboard never
+// fabricates price data. The v7 /quote endpoint frequently 401s without a
+// crumb; the v8 /chart endpoint is reliable for a single price point.
+//
 // Runs as a Vercel Node serverless function.
 
 import type { IncomingMessage, ServerResponse } from "http";
 
-interface YahooQuote {
-  symbol: string;
+interface ChartMeta {
   regularMarketPrice?: number;
-  regularMarketChange?: number;
-  regularMarketChangePercent?: number;
-  regularMarketPreviousClose?: number;
+  chartPreviousClose?: number;
+  previousClose?: number;
   regularMarketTime?: number;
   currency?: string;
-  shortName?: string;
+  symbol?: string;
   marketState?: string;
 }
 
-interface YahooResponse {
-  quoteResponse?: { result?: YahooQuote[]; error?: { description?: string } | null };
+interface ChartResponse {
+  chart?: {
+    result?: Array<{ meta?: ChartMeta }>;
+    error?: { code?: string; description?: string } | null;
+  };
+}
+
+interface Quote {
+  symbol: string;
+  price: number | null;
+  previousClose: number | null;
+  change: number | null;
+  changePercent: number | null;
+  currency: string;
+  marketState: string | null;
+  asOf: string | null;
 }
 
 const ALLOWED = new Set(["META", "MSFT", "GOOGL", "AMZN", "AAPL"]);
+const TIMEOUT_MS = 5000;
 
-export default async function handler(req: IncomingMessage & { query?: Record<string, string | string[]> }, res: ServerResponse) {
-  const url = new URL(req.url || "", "http://localhost");
+async function fetchOne(symbol: string): Promise<Quote> {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; tech-earnings-dashboard/1.0; +https://github.com/amitb1969/tech-earnings-dashboard)",
+        Accept: "application/json",
+      },
+    });
+    if (!res.ok) {
+      return emptyQuote(symbol);
+    }
+    const data = (await res.json()) as ChartResponse;
+    const meta = data.chart?.result?.[0]?.meta;
+    if (!meta || typeof meta.regularMarketPrice !== "number") {
+      return emptyQuote(symbol);
+    }
+    const price = meta.regularMarketPrice;
+    const prev = meta.chartPreviousClose ?? meta.previousClose ?? null;
+    const change = prev != null ? price - prev : null;
+    const changePercent = prev != null && prev !== 0 ? ((price - prev) / prev) * 100 : null;
+    return {
+      symbol,
+      price,
+      previousClose: prev,
+      change,
+      changePercent,
+      currency: meta.currency ?? "USD",
+      marketState: meta.marketState ?? null,
+      asOf: meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000).toISOString() : null,
+    };
+  } catch {
+    return emptyQuote(symbol);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function emptyQuote(symbol: string): Quote {
+  return {
+    symbol,
+    price: null,
+    previousClose: null,
+    change: null,
+    changePercent: null,
+    currency: "USD",
+    marketState: null,
+    asOf: null,
+  };
+}
+
+export default async function handler(
+  req: IncomingMessage & { query?: Record<string, string | string[]> },
+  res: ServerResponse
+) {
+  const url = new URL(req.url || "/", "http://localhost");
   const symbolsParam = (req.query?.symbols as string) ?? url.searchParams.get("symbols") ?? "";
   const requested = symbolsParam
     .split(",")
@@ -36,39 +110,24 @@ export default async function handler(req: IncomingMessage & { query?: Record<st
   res.setHeader("Content-Type", "application/json; charset=utf-8");
 
   try {
-    const yahooUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols.join(","))}`;
-    const upstream = await fetch(yahooUrl, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; tech-earnings-dashboard/1.0; +https://github.com/amitb1969/tech-earnings-dashboard)",
-        Accept: "application/json",
-      },
-    });
-
-    if (!upstream.ok) {
-      res.statusCode = 502;
-      res.end(JSON.stringify({ error: "upstream_error", status: upstream.status }));
-      return;
-    }
-
-    const data = (await upstream.json()) as YahooResponse;
-    const results = data.quoteResponse?.result ?? [];
-
-    const quotes = results.map((q) => ({
-      symbol: q.symbol,
-      price: q.regularMarketPrice ?? null,
-      change: q.regularMarketChange ?? null,
-      changePercent: q.regularMarketChangePercent ?? null,
-      previousClose: q.regularMarketPreviousClose ?? null,
-      currency: q.currency ?? "USD",
-      marketState: q.marketState ?? null,
-      asOf: q.regularMarketTime ? new Date(q.regularMarketTime * 1000).toISOString() : null,
-    }));
-
-    res.statusCode = 200;
-    res.end(JSON.stringify({ quotes, source: "Yahoo Finance", fetchedAt: new Date().toISOString() }));
+    const quotes = await Promise.all(symbols.map(fetchOne));
+    const ok = quotes.some((q) => q.price != null);
+    res.statusCode = ok ? 200 : 502;
+    res.end(
+      JSON.stringify({
+        quotes,
+        source: "Yahoo Finance (chart v8)",
+        fetchedAt: new Date().toISOString(),
+        partial: !quotes.every((q) => q.price != null),
+      })
+    );
   } catch (err) {
     res.statusCode = 500;
-    res.end(JSON.stringify({ error: "fetch_failed", message: err instanceof Error ? err.message : String(err) }));
+    res.end(
+      JSON.stringify({
+        error: "fetch_failed",
+        message: err instanceof Error ? err.message : String(err),
+      })
+    );
   }
 }

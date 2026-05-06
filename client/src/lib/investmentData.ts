@@ -634,7 +634,7 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
       },
       {
         metric: "AWS Operating Margin",
-        current: 37.8,
+        current: 37.7,
         prior: 39.2,
         trend: "compressing",
         driver: "Increased CapEx for AI infrastructure; margin compression from custom silicon investment",

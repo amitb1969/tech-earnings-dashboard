@@ -143,7 +143,7 @@ export const companies: CompanyData[] = [
     epsGrowth: 23,
     epsVsConsensus: 0.21,
     
-    keySegmentName: "Azure & Cloud",
+    keySegmentName: "Intelligent Cloud",
     keySegmentRevenue: 34.7,
     keySegmentGrowth: 30,
     
