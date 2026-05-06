@@ -260,7 +260,8 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
       targetPrice: "Not provided - earnings day close: $669.12",
       timeframe: "Clarity on AI ROI expected by Q4 2026; analyst revisions likely after Q2 2026 earnings",
       source: "Verified from official earnings call and SEC filings"
-    };  },
+    }
+  },
 
   {
     ticker: "MSFT",
@@ -416,7 +417,8 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
       targetPrice: "Not provided - earnings day close: $424.58",
       timeframe: "Clarity on supply constraints expected by Q4 2026; analyst revisions likely after Q2 FY2027 earnings",
       source: "Verified from official earnings call and SEC filings"
-    };  },
+    }
+  },
 
   {
     ticker: "GOOGL",
@@ -572,7 +574,8 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
       targetPrice: "Not provided - earnings day close: $349.94",
       timeframe: "Sustained Cloud growth expected through 2027; analyst revisions likely after Q2 2026 earnings",
       source: "Verified from official earnings call and SEC filings"
-    };  },
+    }
+  },
 
   {
     ticker: "AMZN",
@@ -728,7 +731,8 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
       targetPrice: "Not provided - earnings day close: $263.04",
       timeframe: "Clarity on custom silicon adoption expected by Q4 2026; analyst revisions likely after Q2 2026 earnings",
       source: "Verified from official earnings call and SEC filings"
-    };  },
+    }
+  },
 
   {
     ticker: "AAPL",
@@ -740,7 +744,7 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
     stockReaction: 2.7,
     peRatio: 28.5,
     priorPeRatio: 27.8,
-    targetPriceImplication: "Based on earnings day (April 30, 2026) closing price: $270.17. No forward target price projections included."
+    targetPriceImplication: "Based on earnings day (April 30, 2026) closing price: $270.17. No forward target price projections included.",
     
     growthDrivers: [
       {
@@ -877,13 +881,13 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
         source: "Analyst commentary"
       }
     ],
-        analystImplications: {
+    analystImplications: {
       likely: "DOWNGRADES possible from Services deceleration + CEO transition + AI gap",
       rationale: "Apple facing headwinds: Services growth slowing, CEO transition uncertainty, no AI monetization strategy vs. competitors. iPhone growth may not sustain.",
       targetPrice: "Not provided - earnings day close: $270.17",
       timeframe: "Clarity on AI strategy expected by Q4 2026; analyst revisions likely after Q3 FY2026 earnings",
       source: "Verified from official earnings call and SEC filings"
-    };
+    }
   }
 ];
 
