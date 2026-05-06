@@ -5,7 +5,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
   investmentAnalysis,
-  hedgeFundComparison,
+  crossCompanyMetrics,
   type CompanyInvestmentAnalysis,
 } from "@/lib/investmentData";
 import {
@@ -594,7 +594,7 @@ export default function Home() {
                 Growth Acceleration (YoY %)
               </h3>
               <div className="space-y-2">
-                {hedgeFundComparison.growthAcceleration.map((item, i) => (
+                {crossCompanyMetrics.growthAcceleration.map((item: any, i: number) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded bg-gray-50">
                     <div className="text-sm font-bold">{item.ticker}</div>
                     <div className="flex items-center gap-2">
@@ -616,7 +616,7 @@ export default function Home() {
                 Margin Expansion (pp)
               </h3>
               <div className="space-y-2">
-                {hedgeFundComparison.marginExpansion.map((item, i) => (
+                {crossCompanyMetrics.marginExpansion.map((item: any, i: number) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded bg-gray-50">
                     <div>
                       <div className="text-sm font-bold">{item.ticker}</div>
@@ -642,7 +642,7 @@ export default function Home() {
                 Management Conviction Score
               </h3>
               <div className="space-y-3">
-                {hedgeFundComparison.managementConviction.map((item, i) => (
+                {crossCompanyMetrics.managementConviction.map((item: any, i: number) => (
                   <div key={i} className="p-3 rounded bg-gray-50">
                     <div className="flex items-center justify-between mb-1">
                       <div className="text-sm font-bold">{item.ticker}</div>
@@ -662,7 +662,7 @@ export default function Home() {
                 Analyst Revision Probability
               </h3>
               <div className="space-y-3">
-                {hedgeFundComparison.upgradeDowngradeProbability.map((item, i) => (
+                {crossCompanyMetrics.analystRevisionProbability.map((item: any, i: number) => (
                   <div key={i} className="p-3 rounded bg-gray-50">
                     <div className="text-sm font-bold mb-1">{item.ticker}</div>
                     <div className="flex gap-2 mb-1">
