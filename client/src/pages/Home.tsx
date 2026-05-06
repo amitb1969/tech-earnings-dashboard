@@ -672,30 +672,48 @@ export default function Home() {
 
             {/* Upgrade/downgrade probability */}
             <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-1">
                 Analyst Revision Probability
               </h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                Likelihood of upward vs. downward estimate revisions over the next quarter.
+              </p>
               <div className="space-y-3">
-                {crossCompanyMetrics.analystRevisionProbability.map((item, i: number) => (
-                  <div key={i} className="p-3 rounded bg-gray-50">
-                    <div className="text-sm font-bold mb-1">{item.company}</div>
-                    <div className="flex gap-2 mb-1">
-                      <div
-                        className="text-xs px-2 py-0.5 rounded font-bold"
-                        style={{ background: "#10B98120", color: "#059669" }}
-                      >
-                        ↑ {item.upgrade}
+                {crossCompanyMetrics.analystRevisionProbability.map((item, i: number) => {
+                  const score = (s: string) => (s === "High" ? 2 : s === "Medium" ? 1 : 0);
+                  const net = score(item.upgrade) - score(item.downgrade);
+                  const netLabel =
+                    net >= 2 ? "Bullish skew" : net === 1 ? "Lean bullish" : net === 0 ? "Balanced" : net === -1 ? "Lean bearish" : "Bearish skew";
+                  const netColor =
+                    net >= 2 ? "#059669" : net === 1 ? "#10B981" : net === 0 ? "#6B7280" : net === -1 ? "#F59E0B" : "#DC2626";
+                  return (
+                    <div key={i} className="p-3 rounded bg-gray-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-sm font-bold">{item.company}</div>
+                        <div className="text-xs font-bold" style={{ color: netColor }}>
+                          {netLabel}
+                        </div>
                       </div>
-                      <div
-                        className="text-xs px-2 py-0.5 rounded font-bold"
-                        style={{ background: "#EF444420", color: "#DC2626" }}
-                      >
-                        ↓ {item.downgrade}
+                      <div className="flex gap-2 mb-1">
+                        <div
+                          className="text-xs px-2 py-0.5 rounded font-bold"
+                          style={{ background: "#10B98120", color: "#059669" }}
+                          title="Probability that analysts raise estimates / price targets"
+                        >
+                          ↑ Upgrade: {item.upgrade}
+                        </div>
+                        <div
+                          className="text-xs px-2 py-0.5 rounded font-bold"
+                          style={{ background: "#EF444420", color: "#DC2626" }}
+                          title="Probability that analysts cut estimates / price targets"
+                        >
+                          ↓ Downgrade: {item.downgrade}
+                        </div>
                       </div>
+                      <div className="text-xs text-muted-foreground">{item.rationale}</div>
                     </div>
-                    <div className="text-xs text-muted-foreground">{item.rationale}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
