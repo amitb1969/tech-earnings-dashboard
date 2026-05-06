@@ -1,17 +1,13 @@
-// Design: Executive Briefing — Clean Signal
-// Swiss International Style meets modern SaaS
-// Warm white background, strong typographic hierarchy, company-color accents
+// Hedge Fund Investment Intelligence Dashboard
+// Focus: Growth drivers, guidance trends, management tone, competitive positioning
+// Raw intelligence for investment decision-making — no explicit buy/sell recommendations
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
-  companies,
-  cloudGrowthData,
-  revenueData,
-  capexData,
-  epsGrowthData,
-  crossCompanyThemes,
-  type CompanyData,
-} from "@/lib/earningsData";
+  investmentAnalysis,
+  hedgeFundComparison,
+  type CompanyInvestmentAnalysis,
+} from "@/lib/investmentData";
 import {
   BarChart,
   Bar,
@@ -24,31 +20,24 @@ import {
   LineChart,
   Line,
   Legend,
+  ScatterChart,
+  Scatter,
   RadarChart,
   Radar,
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
 } from "recharts";
-import { TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
-
-// ─── Animated counter hook ───────────────────────────────────────────────────
-function useCountUp(target: number, duration = 1200, start = false) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!start) return;
-    let startTime: number | null = null;
-    const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(eased * target));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [target, duration, start]);
-  return count;
-}
+import {
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  Target,
+  Zap,
+} from "lucide-react";
 
 // ─── Intersection observer hook ──────────────────────────────────────────────
 function useInView(threshold = 0.2) {
@@ -65,78 +54,72 @@ function useInView(threshold = 0.2) {
   return { ref, inView };
 }
 
-// ─── Metric card ─────────────────────────────────────────────────────────────
-function MetricCard({
-  label,
-  value,
-  growth,
-  highlight,
-  color,
-}: {
-  label: string;
-  value: string;
-  growth?: string;
-  highlight?: boolean;
-  color: string;
-}) {
+// ─── Investment signal badge ────────────────────────────────────────────────
+function SignalBadge({ signal }: { signal: "upgrade_trigger" | "downgrade_risk" | "neutral" }) {
+  const config = {
+    upgrade_trigger: { bg: "#10B98120", text: "#059669", icon: "↑", label: "UPGRADE TRIGGER" },
+    downgrade_risk: { bg: "#EF444420", text: "#DC2626", icon: "↓", label: "DOWNGRADE RISK" },
+    neutral: { bg: "#6B728020", text: "#4B5563", icon: "→", label: "NEUTRAL" },
+  };
+  const c = config[signal];
   return (
-    <div
-      className={`rounded-lg p-4 card-hover ${highlight ? "border border-opacity-30" : "border border-border"}`}
-      style={{
-        background: highlight ? `${color}10` : "white",
-        borderColor: highlight ? color : undefined,
-      }}
-    >
-      <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">
-        {label}
-      </div>
-      <div
-        className="text-xl font-bold metric-number"
-        style={{ fontFamily: "'IBM Plex Mono', monospace", color: highlight ? color : "inherit" }}
-      >
-        {value}
-      </div>
-      {growth && (
-        <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-          {growth.startsWith("+") ? (
-            <TrendingUp className="w-3 h-3 text-green-600" />
-          ) : growth.startsWith("-") ? (
-            <TrendingDown className="w-3 h-3 text-red-500" />
-          ) : (
-            <Minus className="w-3 h-3 text-gray-400" />
-          )}
-          {growth}
-        </div>
-      )}
+    <div className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold" style={{ background: c.bg, color: c.text }}>
+      <span>{c.icon}</span>
+      {c.label}
     </div>
   );
 }
 
-// ─── CIO Implication card ─────────────────────────────────────────────────────
-function CIOImplication({
-  title,
-  detail,
-  color,
+// ─── Management tone gauge ──────────────────────────────────────────────────
+function ToneGauge({ score, sentiment }: { score: number; sentiment: string }) {
+  const color = sentiment === "bullish" ? "#10B981" : sentiment === "cautious" ? "#EF4444" : "#6B7280";
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div
+          className="h-full transition-all duration-300"
+          style={{ width: `${(score / 10) * 100}%`, background: color }}
+        />
+      </div>
+      <div className="text-sm font-bold" style={{ color }}>
+        {score}/10
+      </div>
+      <div className="text-xs uppercase font-semibold px-2 py-1 rounded" style={{ background: `${color}20`, color }}>
+        {sentiment}
+      </div>
+    </div>
+  );
+}
+
+// ─── Growth driver card ─────────────────────────────────────────────────────
+function GrowthDriverCard({
+  driver,
+  contribution,
+  sustainability,
+  risk,
 }: {
-  title: string;
-  detail: string;
-  color: string;
+  driver: string;
+  contribution: string;
+  sustainability: "high" | "medium" | "low";
+  risk: string;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const sustainColor =
+    sustainability === "high" ? "#10B981" : sustainability === "medium" ? "#F59E0B" : "#EF4444";
   return (
     <div
-      className="rounded-r-lg p-4 mb-3 cursor-pointer transition-all duration-200"
-      style={{
-        background: `${color}08`,
-        borderLeft: `4px solid ${color}`,
-      }}
+      className="rounded-lg border p-4 mb-3 cursor-pointer transition-all"
+      style={{ borderColor: `${sustainColor}40`, background: `${sustainColor}08` }}
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="font-semibold text-sm" style={{ color }}>
-          {title}
+        <div>
+          <div className="font-bold text-sm" style={{ color: sustainColor }}>
+            {driver}
+          </div>
+          <div className="text-xs text-foreground/70 mt-1">{contribution}</div>
         </div>
-        <div className="flex-shrink-0 mt-0.5">
+        <div className="flex-shrink-0">
           {expanded ? (
             <ChevronUp className="w-4 h-4 text-muted-foreground" />
           ) : (
@@ -145,24 +128,112 @@ function CIOImplication({
         </div>
       </div>
       {expanded && (
-        <p className="text-sm text-foreground/80 mt-2 leading-relaxed" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          {detail}
-        </p>
+        <div className="mt-3 pt-3 border-t border-border/50">
+          <div className="text-xs text-foreground/60 leading-relaxed">
+            <span className="font-semibold">Risk:</span> {risk}
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-// ─── Company section ──────────────────────────────────────────────────────────
-function CompanySection({ company }: { company: CompanyData }) {
+// ─── Inflection point card ──────────────────────────────────────────────────
+function InflectionPointCard({
+  change,
+  prior,
+  current,
+  implication,
+  investmentSignal,
+}: {
+  change: string;
+  prior: string;
+  current: string;
+  implication: string;
+  investmentSignal: "upgrade_trigger" | "downgrade_risk" | "neutral";
+}) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div
+      className="rounded-lg border p-4 mb-3 cursor-pointer transition-all"
+      style={{ borderColor: "#1A56DB40", background: "#1A56DB08" }}
+      onClick={() => setExpanded(!expanded)}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1">
+          <div className="font-bold text-sm text-foreground">{change}</div>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="text-xs text-muted-foreground">
+              <span className="font-semibold">Prior:</span> {prior}
+            </div>
+            <TrendingUp className="w-3 h-3 text-blue-600" />
+            <div className="text-xs text-muted-foreground">
+              <span className="font-semibold">Current:</span> {current}
+            </div>
+          </div>
+        </div>
+        <div className="flex-shrink-0">
+          {expanded ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          )}
+        </div>
+      </div>
+      {expanded && (
+        <div className="mt-3 pt-3 border-t border-border/50">
+          <div className="text-xs text-foreground/70 leading-relaxed mb-2">{implication}</div>
+          <SignalBadge signal={investmentSignal} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Risk assessment card ───────────────────────────────────────────────────
+function RiskCard({
+  risk,
+  probability,
+  impact,
+  mitigation,
+}: {
+  risk: string;
+  probability: "high" | "medium" | "low";
+  impact: "severe" | "moderate" | "minor";
+  mitigation: string;
+}) {
+  const probColor = probability === "high" ? "#EF4444" : probability === "medium" ? "#F59E0B" : "#10B981";
+  const impactColor = impact === "severe" ? "#EF4444" : impact === "moderate" ? "#F59E0B" : "#10B981";
+  return (
+    <div className="rounded-lg border border-border p-4 mb-3 bg-white">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="font-bold text-sm">{risk}</div>
+        <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+      </div>
+      <div className="flex gap-2 mb-2">
+        <div className="text-xs px-2 py-1 rounded font-semibold" style={{ background: `${probColor}20`, color: probColor }}>
+          Prob: {probability}
+        </div>
+        <div className="text-xs px-2 py-1 rounded font-semibold" style={{ background: `${impactColor}20`, color: impactColor }}>
+          Impact: {impact}
+        </div>
+      </div>
+      <div className="text-xs text-foreground/70 leading-relaxed">
+        <span className="font-semibold">Mitigation:</span> {mitigation}
+      </div>
+    </div>
+  );
+}
+
+// ─── Company deep dive section ──────────────────────────────────────────────
+function CompanyDeepDive({ company }: { company: CompanyInvestmentAnalysis }) {
   const { ref, inView } = useInView(0.1);
-  const stockUp = company.stockReactionPct > 0;
-  const stockNeutral = Math.abs(company.stockReactionPct) < 1;
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   return (
     <section
       ref={ref}
-      id={company.id}
+      id={company.ticker}
       className="mb-16 scroll-mt-24"
       style={{
         opacity: inView ? 1 : 0,
@@ -170,170 +241,228 @@ function CompanySection({ company }: { company: CompanyData }) {
         transition: "opacity 0.5s ease, transform 0.5s ease",
       }}
     >
-      {/* Company header */}
+      {/* Header */}
       <div
         className="rounded-xl p-6 mb-6"
         style={{ background: `${company.color}08`, borderLeft: `5px solid ${company.color}` }}
       >
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
           <div>
-            <div className="flex items-center gap-3 mb-1">
+            <div className="flex items-center gap-2 mb-2">
               <span
-                className="text-xs font-bold px-2 py-0.5 rounded"
-                style={{ background: company.color, color: "white" }}
+                className="text-xs font-bold px-2 py-0.5 rounded text-white"
+                style={{ background: company.color }}
               >
                 {company.ticker}
               </span>
               <span className="text-xs text-muted-foreground">{company.reportDate}</span>
-              <span className="text-xs text-muted-foreground">{company.quarter}</span>
             </div>
-            <h2
-              className="text-3xl font-bold"
-              style={{ fontFamily: "'Sora', sans-serif", color: company.color }}
-            >
+            <h2 className="text-3xl font-bold" style={{ color: company.color, fontFamily: "'Sora', sans-serif" }}>
               {company.name}
             </h2>
           </div>
           <div className="text-right">
             <div className="text-xs text-muted-foreground mb-1">Stock Reaction</div>
             <div
-              className={`text-lg font-bold metric-number ${stockNeutral ? "text-gray-500" : stockUp ? "text-green-600" : "text-red-500"}`}
+              className={`text-2xl font-bold metric-number ${company.stockReaction > 1 ? "text-green-600" : company.stockReaction < -1 ? "text-red-500" : "text-gray-500"}`}
               style={{ fontFamily: "'IBM Plex Mono', monospace" }}
             >
-              {stockUp ? "+" : ""}{company.stockReactionPct}%
+              {company.stockReaction > 0 ? "+" : ""}{company.stockReaction}%
             </div>
-            <div className="text-xs text-muted-foreground">{company.stockReaction}</div>
+            <div className="text-xs text-muted-foreground">P/E: {company.peRatio}</div>
           </div>
         </div>
 
-        {/* CEO Quote */}
-        <blockquote
-          className="mt-4 text-sm italic leading-relaxed border-l-2 pl-4 text-foreground/70"
-          style={{ borderColor: company.color, fontFamily: "'IBM Plex Sans', sans-serif" }}
-        >
-          "{company.ceoQuote}"
-          <footer className="mt-1 not-italic text-xs font-semibold text-muted-foreground">
-            — {company.ceoName}, {company.quarter} Earnings Call
-          </footer>
-        </blockquote>
-      </div>
-
-      {/* Core financials row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="rounded-lg border border-border p-4 bg-white">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Revenue</div>
-          <div className="text-2xl font-bold metric-number" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
-            ${company.revenue}B
-          </div>
-          <div className="text-sm text-green-600 font-medium">+{company.revenueGrowth}% YoY</div>
-        </div>
-        <div className="rounded-lg border border-border p-4 bg-white">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">EPS</div>
-          <div className="text-2xl font-bold metric-number" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
-            ${company.eps}
-          </div>
-          <div className="text-sm text-green-600 font-medium">+{company.epsGrowth}% YoY</div>
-        </div>
-        <div className="rounded-lg border border-border p-4 bg-white">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Op. Margin</div>
-          <div className="text-2xl font-bold metric-number" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
-            {company.operatingMargin}%
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">${company.operatingIncome}B op. income</div>
-        </div>
-        <div className="rounded-lg border border-border p-4 bg-white">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{company.keySegmentName}</div>
-          <div className="text-2xl font-bold metric-number" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
-            ${company.keySegmentRevenue}B
-          </div>
-          <div className="text-sm text-green-600 font-medium">+{company.keySegmentGrowth}% YoY</div>
-        </div>
-      </div>
-
-      {/* Two-column: metrics + messages */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Key metrics grid */}
-        <div>
-          <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
-            Key Metrics
-          </h3>
-          <div className="grid grid-cols-2 gap-2">
-            {company.keyMetrics.map((m) => (
-              <MetricCard key={m.label} {...m} color={company.color} />
-            ))}
-          </div>
-        </div>
-
-        {/* Key messages */}
-        <div>
-          <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
-            Key Messages from Earnings Call
-          </h3>
-          <ul className="space-y-3">
-            {company.keyMessages.map((msg, i) => (
-              <li
-                key={i}
-                className="flex gap-3 text-sm leading-relaxed"
-                style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
-              >
-                <span
-                  className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white mt-0.5"
-                  style={{ background: company.color }}
-                >
-                  {i + 1}
-                </span>
-                <span className="text-foreground/80">{msg}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      {/* AI Highlight */}
-      <div
-        className="rounded-lg p-4 mb-6 text-sm"
-        style={{ background: `${company.color}06`, border: `1px solid ${company.color}30` }}
-      >
+        {/* Valuation implication */}
         <div
-          className="text-xs font-bold uppercase tracking-wider mb-1"
-          style={{ color: company.color }}
+          className="rounded p-3 text-sm"
+          style={{ background: `${company.color}10`, borderLeft: `3px solid ${company.color}` }}
         >
-          AI Highlights
-        </div>
-        <div className="text-foreground/80" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          {company.aiHighlight}
+          <span className="font-semibold" style={{ color: company.color }}>
+            Valuation Signal:{" "}
+          </span>
+          <span className="text-foreground/80">{company.targetPriceImplication}</span>
         </div>
       </div>
 
-      {/* CIO Implications */}
-      <div>
+      {/* Two-column layout: Growth drivers + Management tone */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Growth drivers */}
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+            <Zap className="w-4 h-4" />
+            Growth Drivers
+          </h3>
+          {company.growthDrivers.map((driver, i) => (
+            <GrowthDriverCard key={i} {...driver} />
+          ))}
+        </div>
+
+        {/* Management tone */}
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
+            Management Tone & Conviction
+          </h3>
+          <div className="rounded-lg border border-border p-4 bg-white mb-4">
+            <ToneGauge score={company.managementTone.score} sentiment={company.managementTone.overallSentiment} />
+          </div>
+          <div className="space-y-3">
+            {company.managementTone.signals.map((signal, i) => (
+              <div key={i} className="flex gap-2 text-sm">
+                <CheckCircle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                <span className="text-foreground/80">{signal}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 p-3 rounded-lg" style={{ background: "#1A56DB10", borderLeft: "3px solid #1A56DB" }}>
+            <div className="text-xs font-bold uppercase text-blue-700 mb-1">Capital Allocation</div>
+            <div className="text-xs text-foreground/80">{company.managementTone.capitalAllocation}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Guidance analysis */}
+      <div className="rounded-lg border border-border p-4 bg-white mb-6">
         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
-          CIO Implications
+          Guidance Analysis
         </h3>
-        {company.cioImplications.map((imp, i) => (
-          <CIOImplication key={i} {...imp} color={company.color} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">Next Quarter Revenue</div>
+            <div className="text-sm font-bold">{company.guidance.nextQuarterRevenue}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">Prior Guidance</div>
+            <div className="text-sm font-bold">{company.guidance.priorGuidance}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">Raise/Lower</div>
+            <div className="text-sm font-bold" style={{ color: company.guidance.raise ? "#10B981" : "#EF4444" }}>
+              {company.guidance.raise ? "RAISE" : "LOWER"} {company.guidance.magnitude}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">Conservatism</div>
+            <div className="text-sm font-bold uppercase" style={{ color: company.color }}>
+              {company.guidance.conservatism}
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 pt-3 border-t border-border text-sm text-foreground/80">
+          {company.guidance.tone}
+        </div>
+      </div>
+
+      {/* Margin trends */}
+      <div className="rounded-lg border border-border p-4 bg-white mb-6">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
+          Margin Trends (Profitability Sustainability)
+        </h3>
+        <div className="space-y-3">
+          {company.margins.map((margin, i) => (
+            <div key={i} className="flex items-center justify-between p-3 rounded" style={{ background: "#F9FAFB" }}>
+              <div>
+                <div className="text-sm font-bold">{margin.metric}</div>
+                <div className="text-xs text-muted-foreground">{margin.driver}</div>
+              </div>
+              <div className="text-right">
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-bold metric-number" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                    {margin.current}%
+                  </div>
+                  <div className={`text-xs font-bold ${margin.trend === "expanding" ? "text-green-600" : margin.trend === "compressing" ? "text-red-500" : "text-gray-500"}`}>
+                    {margin.trend === "expanding" ? "↑" : margin.trend === "compressing" ? "↓" : "→"}
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {margin.trend === "expanding" ? "+" : margin.trend === "compressing" ? "-" : ""}{Math.abs(margin.current - margin.prior)}pp
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Competitive positioning */}
+      <div className="rounded-lg border border-border p-4 bg-white mb-6">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
+          Competitive Positioning
+        </h3>
+        <div className="space-y-3">
+          {company.competitive.map((comp, i) => (
+            <div key={i} className="p-3 rounded" style={{ background: "#F9FAFB" }}>
+              <div className="text-sm font-bold mb-1">
+                {company.ticker} vs. {comp.vs}
+              </div>
+              <div className="text-xs text-muted-foreground mb-2">{comp.metric}</div>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                  <div className="text-xs text-muted-foreground">Our Performance</div>
+                  <div className="text-sm font-bold">{comp.ourPerformance}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Their Performance</div>
+                  <div className="text-sm font-bold">{comp.theirPerformance}</div>
+                </div>
+              </div>
+              <div className="text-xs text-foreground/70 italic">{comp.implication}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Inflection points */}
+      <div className="mb-6">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
+          Key Inflection Points
+        </h3>
+        {company.inflectionPoints.map((point, i) => (
+          <InflectionPointCard key={i} {...point} />
         ))}
+      </div>
+
+      {/* Risks */}
+      <div className="mb-6">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
+          Downside Risks
+        </h3>
+        {company.risks.map((risk, i) => (
+          <RiskCard key={i} {...risk} />
+        ))}
+      </div>
+
+      {/* Analyst implications */}
+      <div className="rounded-lg border border-border p-4 bg-white">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+          <Target className="w-4 h-4" />
+          Analyst Implications
+        </h3>
+        <div className="space-y-3">
+          <div>
+            <div className="text-xs text-muted-foreground font-semibold mb-1">Likely Outcome</div>
+            <div className="text-sm font-bold">{company.analystImplications.likely}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground font-semibold mb-1">Rationale</div>
+            <div className="text-sm text-foreground/80">{company.analystImplications.rationale}</div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="text-xs text-muted-foreground font-semibold mb-1">Target Price Range</div>
+              <div className="text-sm font-bold" style={{ color: company.color }}>
+                {company.analystImplications.targetPrice}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground font-semibold mb-1">Timeframe</div>
+              <div className="text-sm font-bold">{company.analystImplications.timeframe}</div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
-
-// ─── Custom tooltip ───────────────────────────────────────────────────────────
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white border border-border rounded-lg p-3 shadow-lg text-sm">
-        <p className="font-semibold mb-1">{label}</p>
-        {payload.map((p: any, i: number) => (
-          <p key={i} style={{ color: p.color }}>
-            {p.name}: {p.value}{p.unit || ""}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function Home() {
@@ -351,17 +480,14 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToCompany = (id: string) => {
-    setActiveCompany(id);
-    const el = document.getElementById(id);
+  const scrollToCompany = (ticker: string) => {
+    setActiveCompany(ticker);
+    const el = document.getElementById(ticker);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: "#FAFAF8", fontFamily: "'IBM Plex Sans', sans-serif" }}
-    >
+    <div className="min-h-screen" style={{ background: "#FAFAF8", fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {/* ── Sticky navigation ── */}
       <header
         className="sticky top-0 z-50 border-b border-border bg-white/95 backdrop-blur-sm transition-transform duration-300"
@@ -374,24 +500,21 @@ export default function Home() {
                 className="text-xs font-bold px-2 py-1 rounded"
                 style={{ background: "#1A56DB", color: "white", fontFamily: "'Sora', sans-serif" }}
               >
-                CIO INTEL
+                HF INTEL
               </div>
-              <span
-                className="font-bold text-sm hidden sm:block"
-                style={{ fontFamily: "'Sora', sans-serif" }}
-              >
-                Big Tech Q1 2026 Earnings
+              <span className="font-bold text-sm hidden sm:block" style={{ fontFamily: "'Sora', sans-serif" }}>
+                Big Tech Q1 2026 — Investment Analysis
               </span>
             </div>
             <nav className="flex items-center gap-1 overflow-x-auto">
-              {companies.map((c) => (
+              {investmentAnalysis.map((c) => (
                 <button
-                  key={c.id}
-                  onClick={() => scrollToCompany(c.id)}
+                  key={c.ticker}
+                  onClick={() => scrollToCompany(c.ticker)}
                   className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-200"
                   style={{
-                    background: activeCompany === c.id ? c.color : "transparent",
-                    color: activeCompany === c.id ? "white" : c.color,
+                    background: activeCompany === c.ticker ? c.color : "transparent",
+                    color: activeCompany === c.ticker ? "white" : c.color,
                     border: `1.5px solid ${c.color}`,
                   }}
                 >
@@ -403,18 +526,15 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ── Hero / Executive Summary ── */}
+      {/* ── Hero ── */}
       <div
         className="border-b border-border"
         style={{ background: "linear-gradient(135deg, #0A1628 0%, #1A2E4A 50%, #0D1F3C 100%)" }}
       >
         <div className="container py-12">
           <div className="max-w-3xl mb-8">
-            <div
-              className="text-xs font-bold uppercase tracking-widest mb-3"
-              style={{ color: "#4A90D9" }}
-            >
-              CIO Intelligence Briefing · Week of April 28 – May 2, 2026
+            <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#4A90D9" }}>
+              Hedge Fund Investment Intelligence · Q1 2026 Earnings
             </div>
             <h1
               className="text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight"
@@ -422,48 +542,33 @@ export default function Home() {
             >
               Big Tech Q1 2026
               <br />
-              <span style={{ color: "#4A90D9" }}>Earnings Analysis</span>
+              <span style={{ color: "#4A90D9" }}>Investment Analysis</span>
             </h1>
             <p className="text-white/70 text-base leading-relaxed max-w-2xl">
-              Five Magnificent Seven companies reported earnings this week. Combined, they represent
-              over $540B in quarterly revenue and are committing more than $700B in annual AI
-              infrastructure investment. Here is what every CIO needs to know.
+              Five companies reported earnings this week. This analysis focuses on what matters for investment
+              decisions: growth drivers, guidance trends, management tone, competitive positioning, and downside risks.
+              No explicit buy/sell signals — raw intelligence for your investment committee.
             </p>
           </div>
 
-          {/* Summary stat strip */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {companies.map((c) => (
+          {/* Summary scorecard */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            {investmentAnalysis.map((c) => (
               <button
-                key={c.id}
-                onClick={() => scrollToCompany(c.id)}
+                key={c.ticker}
+                onClick={() => scrollToCompany(c.ticker)}
                 className="rounded-xl p-4 text-left transition-all duration-200 hover:scale-105"
-                style={{
-                  background: `${c.color}20`,
-                  border: `1px solid ${c.color}40`,
-                }}
+                style={{ background: `${c.color}20`, border: `1px solid ${c.color}40` }}
               >
-                <div
-                  className="text-xs font-bold mb-1"
-                  style={{ color: c.color, fontFamily: "'Sora', sans-serif" }}
-                >
+                <div className="text-xs font-bold mb-1" style={{ color: c.color, fontFamily: "'Sora', sans-serif" }}>
                   {c.ticker}
                 </div>
+                <div className="text-xs text-white/60 mb-2">P/E: {c.peRatio}</div>
                 <div
-                  className="text-lg font-bold text-white metric-number"
+                  className={`text-lg font-bold metric-number ${c.stockReaction > 1 ? "text-green-300" : c.stockReaction < -1 ? "text-red-300" : "text-yellow-300"}`}
                   style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                 >
-                  ${c.revenue}B
-                </div>
-                <div className="text-xs text-white/60">Revenue</div>
-                <div
-                  className="text-sm font-semibold mt-1"
-                  style={{
-                    color: c.stockReactionPct > 1 ? "#3FB950" : c.stockReactionPct < -1 ? "#F85149" : "#D29922",
-                    fontFamily: "'IBM Plex Mono', monospace",
-                  }}
-                >
-                  {c.stockReactionPct > 0 ? "+" : ""}{c.stockReactionPct}%
+                  {c.stockReaction > 0 ? "+" : ""}{c.stockReaction}%
                 </div>
                 <div className="text-xs text-white/50">Stock reaction</div>
               </button>
@@ -472,242 +577,144 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Cross-company charts ── */}
+      {/* ── Cross-company comparison ── */}
       <div className="border-b border-border bg-white">
         <div className="container py-10">
-          <h2
-            className="text-2xl font-bold mb-2"
-            style={{ fontFamily: "'Sora', sans-serif" }}
-          >
-            Cross-Company Comparison
-          </h2>
-          <p className="text-muted-foreground text-sm mb-8">
-            Key metrics across all five companies — week of April 28–May 2, 2026
-          </p>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            {/* Cloud growth */}
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
-                Cloud Revenue Growth (YoY %)
-              </h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={cloudGrowthData} layout="vertical" margin={{ left: 20, right: 30 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
-                  <XAxis type="number" tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="company" tick={{ fontSize: 11 }} width={100} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="growth" name="Growth %" radius={[0, 4, 4, 0]}>
-                    {cloudGrowthData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Revenue */}
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
-                Q1 Revenue ($B)
-              </h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={revenueData} layout="vertical" margin={{ left: 20, right: 30 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
-                  <XAxis type="number" tickFormatter={(v) => `$${v}B`} tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="company" tick={{ fontSize: 11 }} width={80} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="revenue" name="Revenue ($B)" radius={[0, 4, 4, 0]}>
-                    {revenueData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* 2026 CapEx */}
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
-                2026 CapEx Guidance ($B)
-              </h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={capexData} layout="vertical" margin={{ left: 20, right: 30 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
-                  <XAxis type="number" tickFormatter={(v) => `$${v}B`} tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="company" tick={{ fontSize: 11 }} width={80} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="capex" name="CapEx ($B)" radius={[0, 4, 4, 0]}>
-                    {capexData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* EPS Growth chart */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
-                EPS Growth YoY (%)
-              </h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={epsGrowthData} margin={{ left: 10, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                  <XAxis dataKey="company" tick={{ fontSize: 11 }} />
-                  <YAxis tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="growth" name="EPS Growth %" radius={[4, 4, 0, 0]}>
-                    {epsGrowthData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Comparison table */}
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
-                At-a-Glance Scorecard
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-2 text-xs text-muted-foreground font-medium">Company</th>
-                      <th className="text-right py-2 text-xs text-muted-foreground font-medium">Revenue</th>
-                      <th className="text-right py-2 text-xs text-muted-foreground font-medium">Rev Growth</th>
-                      <th className="text-right py-2 text-xs text-muted-foreground font-medium">EPS Growth</th>
-                      <th className="text-right py-2 text-xs text-muted-foreground font-medium">Stock</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {companies.map((c) => (
-                      <tr key={c.id} className="border-b border-border/50 hover:bg-gray-50 transition-colors">
-                        <td className="py-2.5">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ background: c.color }} />
-                            <span className="font-semibold" style={{ color: c.color }}>{c.ticker}</span>
-                          </div>
-                        </td>
-                        <td
-                          className="text-right py-2.5 font-medium"
-                          style={{ fontFamily: "'IBM Plex Mono', monospace" }}
-                        >
-                          ${c.revenue}B
-                        </td>
-                        <td className="text-right py-2.5 text-green-600 font-medium">
-                          +{c.revenueGrowth}%
-                        </td>
-                        <td className="text-right py-2.5 text-green-600 font-medium">
-                          +{c.epsGrowth}%
-                        </td>
-                        <td
-                          className={`text-right py-2.5 font-medium ${c.stockReactionPct > 1 ? "text-green-600" : c.stockReactionPct < -1 ? "text-red-500" : "text-gray-500"}`}
-                          style={{ fontFamily: "'IBM Plex Mono', monospace" }}
-                        >
-                          {c.stockReactionPct > 0 ? "+" : ""}{c.stockReactionPct}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Cross-company themes ── */}
-      <div className="border-b border-border" style={{ background: "#F8F9FC" }}>
-        <div className="container py-10">
-          <h2
-            className="text-2xl font-bold mb-2"
-            style={{ fontFamily: "'Sora', sans-serif" }}
-          >
-            Strategic Themes for CIOs
+          <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Sora', sans-serif" }}>
+            Investment Scorecard
           </h2>
           <p className="text-muted-foreground text-sm mb-6">
-            Cross-cutting signals from this week's earnings calls
+            Growth acceleration, margin expansion, management conviction, and upgrade/downgrade probability
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {crossCompanyThemes.map((theme, i) => (
-              <div
-                key={i}
-                className="rounded-xl p-5 bg-white border border-border card-hover"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">{theme.icon}</span>
-                  <div>
-                    <h3
-                      className="font-bold text-base mb-2"
-                      style={{ fontFamily: "'Sora', sans-serif" }}
-                    >
-                      {theme.title}
-                    </h3>
-                    <p className="text-sm text-foreground/70 leading-relaxed mb-3">
-                      {theme.description}
-                    </p>
-                    <div
-                      className="text-sm rounded-r-lg p-3"
-                      style={{
-                        background: "#1A56DB10",
-                        borderLeft: "3px solid #1A56DB",
-                      }}
-                    >
-                      <span className="font-semibold text-xs uppercase tracking-wider text-blue-700">
-                        CIO Action:{" "}
-                      </span>
-                      <span className="text-foreground/80">{theme.implication}</span>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Growth acceleration */}
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
+                Growth Acceleration (YoY %)
+              </h3>
+              <div className="space-y-2">
+                {hedgeFundComparison.growthAcceleration.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded bg-gray-50">
+                    <div className="text-sm font-bold">{item.ticker}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-bold metric-number" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                        {item.current}%
+                      </div>
+                      <div className={`text-xs font-bold ${item.acceleration.startsWith("+") ? "text-green-600" : "text-red-600"}`}>
+                        {item.acceleration}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Margin expansion */}
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
+                Margin Expansion (pp)
+              </h3>
+              <div className="space-y-2">
+                {hedgeFundComparison.marginExpansion.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded bg-gray-50">
+                    <div>
+                      <div className="text-sm font-bold">{item.ticker}</div>
+                      <div className="text-xs text-muted-foreground">{item.metric}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold metric-number" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                        {item.current}%
+                      </div>
+                      <div className="text-xs text-green-600 font-bold">{item.expansion}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Management conviction + upgrade probability */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Management conviction */}
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
+                Management Conviction Score
+              </h3>
+              <div className="space-y-3">
+                {hedgeFundComparison.managementConviction.map((item, i) => (
+                  <div key={i} className="p-3 rounded bg-gray-50">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="text-sm font-bold">{item.ticker}</div>
+                      <div className="text-sm font-bold" style={{ color: item.conviction > 8 ? "#10B981" : "#F59E0B" }}>
+                        {item.conviction}/10
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{item.signal}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Upgrade/downgrade probability */}
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
+                Analyst Revision Probability
+              </h3>
+              <div className="space-y-3">
+                {hedgeFundComparison.upgradeDowngradeProbability.map((item, i) => (
+                  <div key={i} className="p-3 rounded bg-gray-50">
+                    <div className="text-sm font-bold mb-1">{item.ticker}</div>
+                    <div className="flex gap-2 mb-1">
+                      <div
+                        className="text-xs px-2 py-0.5 rounded font-bold"
+                        style={{ background: "#10B98120", color: "#059669" }}
+                      >
+                        ↑ {item.upgrade}
+                      </div>
+                      <div
+                        className="text-xs px-2 py-0.5 rounded font-bold"
+                        style={{ background: "#EF444420", color: "#DC2626" }}
+                      >
+                        ↓ {item.downgrade}
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{item.rationale}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* ── Company deep dives ── */}
       <div className="container py-10">
-        <h2
-          className="text-2xl font-bold mb-2"
-          style={{ fontFamily: "'Sora', sans-serif" }}
-        >
+        <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Sora', sans-serif" }}>
           Company Deep Dives
         </h2>
         <p className="text-muted-foreground text-sm mb-8">
-          Detailed analysis of each company's earnings call — click CIO Implications to expand
+          Investment-grade analysis: growth drivers, guidance trends, management tone, competitive positioning, and downside risks
         </p>
-        {companies.map((company) => (
-          <CompanySection key={company.id} company={company} />
+        {investmentAnalysis.map((company) => (
+          <CompanyDeepDive key={company.ticker} company={company} />
         ))}
       </div>
 
       {/* ── Footer ── */}
-      <footer
-        className="border-t border-border py-8"
-        style={{ background: "#0A1628" }}
-      >
+      <footer className="border-t border-border py-8" style={{ background: "#0A1628" }}>
         <div className="container">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div
-                className="font-bold text-white mb-1"
-                style={{ fontFamily: "'Sora', sans-serif" }}
-              >
-                Big Tech Q1 2026 Earnings — CIO Intelligence Dashboard
+              <div className="font-bold text-white mb-1" style={{ fontFamily: "'Sora', sans-serif" }}>
+                Hedge Fund Investment Intelligence Dashboard
               </div>
               <div className="text-white/50 text-xs">
-                Research compiled from earnings calls, press releases, and analyst reports.
-                Week of April 28 – May 2, 2026. Data as reported.
+                Q1 2026 earnings analysis. Raw intelligence for investment decision-making.
               </div>
             </div>
             <div className="text-white/30 text-xs">
-              For informational purposes only. Not investment advice.
+              Not investment advice. For informational purposes only.
             </div>
           </div>
         </div>
