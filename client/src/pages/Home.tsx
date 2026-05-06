@@ -8,6 +8,32 @@ import {
   hedgeFundComparison,
   type CompanyInvestmentAnalysis,
 } from "@/lib/investmentData";
+
+type LivePrice = { price: number; change: number; percentChange: number; previousClose: number };
+type LivePrices = Record<string, LivePrice>;
+
+function useLivePrices() {
+  const [prices, setPrices] = useState<LivePrices | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/prices")
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data.error) setError(data.error);
+        else setPrices(data);
+      })
+      .catch((e) => !cancelled && setError(String(e)));
+    return () => { cancelled = true; };
+  }, []);
+  return { prices, error };
+}
+
+function formatPrice(n: number | undefined) {
+  if (n === undefined || Number.isNaN(n)) return "—";
+  return `$${n.toFixed(2)}`;
+}
 import {
   BarChart,
   Bar,
@@ -226,9 +252,8 @@ function RiskCard({
 }
 
 // ─── Company deep dive section ──────────────────────────────────────────────
-function CompanyDeepDive({ company }: { company: CompanyInvestmentAnalysis }) {
+function CompanyDeepDive({ company, livePrice }: { company: CompanyInvestmentAnalysis; livePrice?: LivePrice }) {
   const { ref, inView } = useInView(0.1);
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   return (
     <section
@@ -262,13 +287,32 @@ function CompanyDeepDive({ company }: { company: CompanyInvestmentAnalysis }) {
             </h2>
           </div>
           <div className="text-right">
-            <div className="text-xs text-muted-foreground mb-1">Stock Reaction</div>
-            <div
-              className={`text-2xl font-bold metric-number ${company.stockReaction > 1 ? "text-green-600" : company.stockReaction < -1 ? "text-red-500" : "text-gray-500"}`}
-              style={{ fontFamily: "'IBM Plex Mono', monospace" }}
-            >
-              {company.stockReaction > 0 ? "+" : ""}{company.stockReaction}%
+            <div className="text-xs text-muted-foreground mb-1">
+              {livePrice ? "Live Price" : "Stock Reaction"}
             </div>
+            {livePrice ? (
+              <>
+                <div
+                  className="text-2xl font-bold metric-number text-foreground"
+                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                >
+                  {formatPrice(livePrice.price)}
+                </div>
+                <div
+                  className={`text-xs font-semibold ${livePrice.percentChange > 0 ? "text-green-600" : livePrice.percentChange < 0 ? "text-red-500" : "text-gray-500"}`}
+                >
+                  {livePrice.percentChange > 0 ? "+" : ""}
+                  {livePrice.percentChange.toFixed(2)}% today
+                </div>
+              </>
+            ) : (
+              <div
+                className={`text-2xl font-bold metric-number ${company.stockReaction > 1 ? "text-green-600" : company.stockReaction < -1 ? "text-red-500" : "text-gray-500"}`}
+                style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+              >
+                {company.stockReaction > 0 ? "+" : ""}{company.stockReaction}%
+              </div>
+            )}
             <div className="text-xs text-muted-foreground">P/E: {company.peRatio}</div>
           </div>
         </div>
@@ -450,7 +494,7 @@ function CompanyDeepDive({ company }: { company: CompanyInvestmentAnalysis }) {
             <div>
               <div className="text-xs text-muted-foreground font-semibold mb-1">Target Price Range</div>
               <div className="text-sm font-bold" style={{ color: company.color }}>
-                {company.analystImplications.targetPrice}
+                {`Likely $${company.analystImplications.targetLow}–${company.analystImplications.targetHigh} range (vs. ${formatPrice(livePrice?.price)} current) ${company.analystImplications.upsideCondition}; downside to $${company.analystImplications.downside} ${company.analystImplications.downsideCondition}`}
               </div>
             </div>
             <div>
@@ -469,6 +513,7 @@ export default function Home() {
   const [activeCompany, setActiveCompany] = useState<string | null>(null);
   const [headerVisible, setHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const { prices: livePrices, error: priceError } = useLivePrices();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -553,27 +598,54 @@ export default function Home() {
 
           {/* Summary scorecard */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            {investmentAnalysis.map((c) => (
-              <button
-                key={c.ticker}
-                onClick={() => scrollToCompany(c.ticker)}
-                className="rounded-xl p-4 text-left transition-all duration-200 hover:scale-105"
-                style={{ background: `${c.color}20`, border: `1px solid ${c.color}40` }}
-              >
-                <div className="text-xs font-bold mb-1" style={{ color: c.color, fontFamily: "'Sora', sans-serif" }}>
-                  {c.ticker}
-                </div>
-                <div className="text-xs text-white/60 mb-2">P/E: {c.peRatio}</div>
-                <div
-                  className={`text-lg font-bold metric-number ${c.stockReaction > 1 ? "text-green-300" : c.stockReaction < -1 ? "text-red-300" : "text-yellow-300"}`}
-                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+            {investmentAnalysis.map((c) => {
+              const lp = livePrices?.[c.ticker];
+              return (
+                <button
+                  key={c.ticker}
+                  onClick={() => scrollToCompany(c.ticker)}
+                  className="rounded-xl p-4 text-left transition-all duration-200 hover:scale-105"
+                  style={{ background: `${c.color}20`, border: `1px solid ${c.color}40` }}
                 >
-                  {c.stockReaction > 0 ? "+" : ""}{c.stockReaction}%
-                </div>
-                <div className="text-xs text-white/50">Stock reaction</div>
-              </button>
-            ))}
+                  <div className="text-xs font-bold mb-1" style={{ color: c.color, fontFamily: "'Sora', sans-serif" }}>
+                    {c.ticker}
+                  </div>
+                  <div className="text-xs text-white/60 mb-2">P/E: {c.peRatio}</div>
+                  {lp ? (
+                    <>
+                      <div
+                        className="text-lg font-bold metric-number text-white"
+                        style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                      >
+                        {formatPrice(lp.price)}
+                      </div>
+                      <div
+                        className={`text-xs font-semibold ${lp.percentChange > 0 ? "text-green-300" : lp.percentChange < 0 ? "text-red-300" : "text-yellow-300"}`}
+                      >
+                        {lp.percentChange > 0 ? "+" : ""}
+                        {lp.percentChange.toFixed(2)}% today
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className={`text-lg font-bold metric-number ${c.stockReaction > 1 ? "text-green-300" : c.stockReaction < -1 ? "text-red-300" : "text-yellow-300"}`}
+                        style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                      >
+                        {c.stockReaction > 0 ? "+" : ""}{c.stockReaction}%
+                      </div>
+                      <div className="text-xs text-white/50">Stock reaction</div>
+                    </>
+                  )}
+                </button>
+              );
+            })}
           </div>
+          {priceError && (
+            <div className="mt-3 text-xs text-red-300/80">
+              Live prices unavailable: {priceError}
+            </div>
+          )}
         </div>
       </div>
 
@@ -697,7 +769,11 @@ export default function Home() {
           Investment-grade analysis: growth drivers, guidance trends, management tone, competitive positioning, and downside risks
         </p>
         {investmentAnalysis.map((company) => (
-          <CompanyDeepDive key={company.ticker} company={company} />
+          <CompanyDeepDive
+            key={company.ticker}
+            company={company}
+            livePrice={livePrices?.[company.ticker]}
+          />
         ))}
       </div>
 

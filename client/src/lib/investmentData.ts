@@ -88,7 +88,11 @@ export interface CompanyInvestmentAnalysis {
   analystImplications: {
     likely: string;
     rationale: string;
-    targetPrice: string;
+    targetLow: number;
+    targetHigh: number;
+    downside: number;
+    upsideCondition: string;
+    downsideCondition: string;
     timeframe: string;
   };
 }
@@ -229,7 +233,11 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
     analystImplications: {
       likely: "UPGRADES likely from AI infrastructure conviction, but tempered by CapEx shock",
       rationale: "Meta's willingness to sacrifice near-term margins for AI dominance is a bullish signal. However, $125–145B CapEx is massive and ROI is unproven.",
-      targetPrice: "Likely $600–650 range (vs. $550 current) if AI monetization proves out; downside to $450 if CapEx doesn't generate returns",
+      targetLow: 600,
+      targetHigh: 650,
+      downside: 450,
+      upsideCondition: "if AI monetization proves out",
+      downsideCondition: "if CapEx doesn't generate returns",
       timeframe: "Clarity on AI ROI expected by Q4 2026; analyst revisions likely after Q2/Q3 earnings",
     },
   },
@@ -369,7 +377,11 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
     analystImplications: {
       likely: "UPGRADES likely; Azure re-acceleration + Copilot adoption + RPO growth = strong momentum",
       rationale: "Microsoft is winning the enterprise AI race. Supply constraints are a feature, not a bug — they signal strong demand and pricing power.",
-      targetPrice: "Likely $450–480 range (vs. $420 current) if Azure growth sustains; downside to $350 if OpenAI loses competitive advantage",
+      targetLow: 450,
+      targetHigh: 480,
+      downside: 350,
+      upsideCondition: "if Azure growth sustains",
+      downsideCondition: "if OpenAI loses competitive advantage",
       timeframe: "Analyst revisions likely after Q4 FY2026 (July 2026); full-year guidance will be key",
     },
   },
@@ -509,7 +521,11 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
     analystImplications: {
       likely: "UPGRADES likely; Google Cloud inflection + Search resilience + API adoption",
       rationale: "Google Cloud's 63% growth and $460B backlog signal a major inflection point. Search resilience (not cannibalized by AI) is underappreciated.",
-      targetPrice: "Likely $180–200 range (vs. $165 current) if Cloud margin expansion continues; downside to $140 if regulatory headwinds intensify",
+      targetLow: 180,
+      targetHigh: 200,
+      downside: 140,
+      upsideCondition: "if Cloud margin expansion continues",
+      downsideCondition: "if regulatory headwinds intensify",
       timeframe: "Analyst revisions likely after Q2 2026 (July); Cloud margin expansion will be key metric to watch",
     },
   },
@@ -649,7 +665,11 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
     analystImplications: {
       likely: "UPGRADES likely; AWS re-acceleration + custom silicon + margin expansion",
       rationale: "AWS is re-accelerating after years of deceleration. Custom silicon strategy is working. Margin expansion is real.",
-      targetPrice: "Likely $200–220 range (vs. $185 current) if AWS growth sustains; downside to $150 if custom silicon adoption slows",
+      targetLow: 200,
+      targetHigh: 220,
+      downside: 150,
+      upsideCondition: "if AWS growth sustains",
+      downsideCondition: "if custom silicon adoption slows",
       timeframe: "Analyst revisions likely after Q2 2026 (July); AWS growth trajectory will be key metric",
     },
   },
@@ -789,7 +809,11 @@ export const investmentAnalysis: CompanyInvestmentAnalysis[] = [
     analystImplications: {
       likely: "HOLDS likely; Services growth deceleration offsets iPhone strength",
       rationale: "Apple is in harvest mode. Services growth is decelerating. iPhone growth is cyclical. CEO transition introduces uncertainty.",
-      targetPrice: "Likely $180–195 range (vs. $185 current) if Services growth stabilizes; downside to $160 if Services deceleration accelerates",
+      targetLow: 180,
+      targetHigh: 195,
+      downside: 160,
+      upsideCondition: "if Services growth stabilizes",
+      downsideCondition: "if Services deceleration accelerates",
       timeframe: "Analyst revisions likely after Q3 FY2026 (August); Services growth trajectory will be key metric",
     },
   },
