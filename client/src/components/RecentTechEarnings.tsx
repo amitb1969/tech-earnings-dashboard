@@ -1,32 +1,5 @@
-import { useEffect, useState } from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-
-interface ResultRow {
-  ticker: string;
-  name: string | null;
-  logo: string | null;
-  marketCapB: number | null;
-  reportDate: string;
-  hour: string | null;
-  epsActual: number | null;
-  epsEstimate: number | null;
-  epsSurprisePct: number | null;
-  revenueActualB: number | null;
-  revenueEstimateB: number | null;
-  revenueSurprisePct: number | null;
-  priceReactionPct: number | null;
-  beat: "beat" | "miss" | "mixed" | "n/a";
-}
-
-interface RadarResponse {
-  available: boolean;
-  reason?: string;
-  windowFrom?: string;
-  windowTo?: string;
-  fetchedAt?: string;
-  sources?: string[];
-  results: ResultRow[];
-}
+import { useRecentEarnings, type RadarRow as ResultRow } from "@/lib/useRecentEarnings";
 
 function fmtMoney(v: number | null, digits = 2): string {
   if (v == null) return "—";
@@ -72,28 +45,7 @@ const beatLabel: Record<ResultRow["beat"], string> = {
 };
 
 export default function RecentTechEarnings() {
-  const [data, setData] = useState<RadarResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/recent-earnings", { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as RadarResponse;
-        if (!cancelled) setData(json);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data, loading, error } = useRecentEarnings();
 
   if (loading) return null;
   if (error) return null;
