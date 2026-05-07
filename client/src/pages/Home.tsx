@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import LiveStockPrices from "@/components/LiveStockPrices";
 import RecentTechEarnings from "@/components/RecentTechEarnings";
+import StalenessBanner from "@/components/StalenessBanner";
 
 // ─── Intersection observer hook ──────────────────────────────────────────────
 function useInView(threshold = 0.2) {
@@ -258,6 +259,7 @@ function CompanyDeepDive({ company }: { company: CompanyInvestmentAnalysis }) {
         className="rounded-xl p-6 mb-6"
         style={{ background: `${company.color}08`, borderLeft: `5px solid ${company.color}` }}
       >
+        <StalenessBanner ticker={company.ticker} curatedReportDate={company.reportDate} />
         <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
