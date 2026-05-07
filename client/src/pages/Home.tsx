@@ -39,6 +39,7 @@ import {
   Zap,
 } from "lucide-react";
 import LiveStockPrices from "@/components/LiveStockPrices";
+import RecentTechEarnings from "@/components/RecentTechEarnings";
 
 // ─── Intersection observer hook ──────────────────────────────────────────────
 function useInView(threshold = 0.2) {
@@ -590,6 +591,8 @@ export default function Home() {
 
       {/* ── Live stock prices (real, fetched at runtime) ── */}
       <LiveStockPrices />
+
+      <RecentTechEarnings />
 
       {/* ── Cross-company comparison ── */}
       <div className="border-b border-border bg-white">
